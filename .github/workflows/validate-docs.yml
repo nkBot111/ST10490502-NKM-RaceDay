@@ -1,0 +1,22 @@
+name: Validate Part 1 Documentation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check documentation folder
+        run: |
+          test -d docs
+          test -f docs/README.md
