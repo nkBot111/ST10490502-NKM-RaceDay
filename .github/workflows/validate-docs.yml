@@ -9,14 +9,70 @@ on:
       - main
 
 jobs:
-  validate-docs:
+  validate-part1:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check documentation folder
+      - name: Check repository structure
         run: |
+          set -e
+
+          test -f README.md
           test -d docs
           test -f docs/README.md
+          test -f docs/ERD.png
+          test -f docs/RaceDay_API_Endpoint_Plan.md
+          test -f docs/RaceDay_Database.sql
+
+          echo "All required Part 1 files are present."
+
+      - name: Validate API endpoint plan
+        run: |
+          set -e
+
+          grep -Fq "| HTTP Method | Route | Description | Role Required | Request Body | Expected Response |" docs/RaceDay_API_Endpoint_Plan.md
+
+          grep -Fq "/api/auth/register" docs/RaceDay_API_Endpoint_Plan.md
+          grep -Fq "/api/auth/login" docs/RaceDay_API_Endpoint_Plan.md
+          grep -Fq "/api/events" docs/RaceDay_API_Endpoint_Plan.md
+          grep -Fq "/api/categories" docs/RaceDay_API_Endpoint_Plan.md
+          grep -Fq "/api/enrollments" docs/RaceDay_API_Endpoint_Plan.md
+          grep -Fq "/api/results" docs/RaceDay_API_Endpoint_Plan.md
+
+          echo "API endpoint plan validation passed."
+
+      - name: Validate SQL database script
+        run: |
+          set -e
+
+          SQL_FILE="docs/RaceDay_Database.sql"
+
+          grep -Eqi "CREATE TABLE[[:space:]]+(dbo\.)?Users" "$SQL_FILE"
+          grep -Eqi "CREATE TABLE[[:space:]]+(dbo\.)?UserProfiles" "$SQL_FILE"
+          grep -Eqi "CREATE TABLE[[:space:]]+(dbo\.)?Categories" "$SQL_FILE"
+          grep -Eqi "CREATE TABLE[[:space:]]+(dbo\.)?Events" "$SQL_FILE"
+          grep -Eqi "CREATE TABLE[[:space:]]+(dbo\.)?Enrollments" "$SQL_FILE"
+          grep -Eqi "CREATE TABLE[[:space:]]+(dbo\.)?Results" "$SQL_FILE"
+
+          TABLE_COUNT=$(grep -Eic "^[[:space:]]*CREATE TABLE[[:space:]]+" "$SQL_FILE")
+
+          if [ "$TABLE_COUNT" -ne 6 ]; then
+            echo "Expected 6 CREATE TABLE statements but found $TABLE_COUNT."
+            exit 1
+          fi
+
+          grep -qi "PRIMARY KEY" "$SQL_FILE"
+          grep -qi "FOREIGN KEY" "$SQL_FILE"
+          grep -qi "NOT NULL" "$SQL_FILE"
+          grep -qi "UNIQUE" "$SQL_FILE"
+          grep -qi "DEFAULT" "$SQL_FILE"
+          grep -qi "INSERT INTO" "$SQL_FILE"
+
+          echo "SQL database validation passed."
+
+      - name: Part 1 validation successful
+        run: |
+          echo "RaceDay Part 1 documentation validation completed successfully."
