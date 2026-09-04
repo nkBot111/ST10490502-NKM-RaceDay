@@ -79,6 +79,6 @@ The Results table is linked to Enrollments. EnrollmentID is unique which ensures
 
 ## CI/CD Evidence
 
-**File:** `ci-success.png`
+**File:** `CI-Success.png`
 
 The screenshot provides evidence that the GitHub Actions workflow successfully validated the RaceDay Part 1 repository and required documentation.
