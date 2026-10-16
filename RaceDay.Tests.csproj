@@ -4,9 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +18,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Raceday.API\Raceday.API.csproj" />
+    <Compile Include="AuthControllerTests.cs" />
+    <Compile Include="RoleAndEnrollmentTests.cs" />
+    <Compile Include="TestSession.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Raceday.API.csproj" />
   </ItemGroup>
 
   <ItemGroup>
