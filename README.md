@@ -1,119 +1,137 @@
-# RaceDay Part 1 Documentation
+# RaceDay
 
-This folder contains the planning and database deliverables completed for Part 1 of the RaceDay Portfolio of Evidence.
+RaceDay is a web-based event management system designed for road running, walking and cycling events in South Africa.
 
-## Entity Relationship Diagram
+The system provides a central platform where Organisers can create and manage sporting events while Participants can register for events, select event categories, manage their enrolments and view race results.
 
-**File:** `ERD.png`
+The RaceDay project is developed progressively as part of the Portfolio of Evidence.
 
-The Entity Relationship Diagram represents the complete RaceDay relational database design.
+---
 
-The database contains six entities:
+# System Roles
 
-- Users
-- UserProfiles
-- Categories
-- Events
-- Enrollments
-- Results
+RaceDay supports two main user roles:
 
-The ERD identifies the attributes, primary keys, foreign keys, unique constraints and relationship cardinalities required by the RaceDay system.
+## Organiser
 
-## API Endpoint Plan
+An Organiser is responsible for creating and managing RaceDay events.
 
-**File:** `RaceDay_API_Endpoint_Plan.md`
+An Organiser can:
 
-The API Endpoint Plan defines the RESTful endpoints that will be implemented during Part 2.
+- Register and log in to the system.
+- Manage their personal profile.
+- Create new events.
+- Update events that they created.
+- Delete eligible events.
+- Create and manage event categories.
+- View Participants enrolled in their events.
+- Capture race results.
+- Update race results.
 
-The plan covers:
+## Participant
 
-- Authentication
-- User Profiles
-- Events
-- Categories
-- Event Enrolments
-- Results
+A Participant uses RaceDay to discover and enter sporting events.
 
-Each endpoint includes:
+A Participant can:
 
-- HTTP Method
-- Route
-- Description
-- Role Required
-- Request Body
-- Expected Response
+- Register and log in.
+- Manage their personal profile.
+- Browse available events.
+- View event categories.
+- Enrol in an event.
+- Select a category when enrolling.
+- View their personal enrolments.
+- Cancel eligible enrolments.
+- View their race results.
 
-The plan also includes relevant success and failure HTTP response codes.
+Role-based restrictions are enforced by the API so that Organisers and Participants can only access functionality appropriate to their role.
 
-## SQL Database Script
+---
 
-**File:** `RaceDay_Database.sql`
+# Part 1 – System Planning and Database Design
 
-The SQL script creates the complete RaceDay database schema using Microsoft SQL Server.
+Part 1 focused on planning the RaceDay system before implementation.
 
-The database contains the same six entities represented in the ERD:
+The Part 1 documentation is stored in the `/docs` folder.
 
-- Users
-- UserProfiles
-- Categories
-- Events
-- Enrollments
-- Results
+The documentation includes:
 
-The script includes:
+- `ERD.png` – Entity Relationship Diagram for RaceDay.
+- `RaceDay_API_Endpoint_Plan.md` – planned REST API endpoints.
+- `RaceDay_Database.sql` – SQL Server database creation script.
+- SQL execution evidence.
+- GitHub Actions Continuous Integration evidence.
+- Supporting RaceDay planning documentation.
 
-- Primary keys
-- Foreign keys
-- NOT NULL constraints
-- UNIQUE constraints
-- DEFAULT constraints
-- CHECK constraints
-- Realistic sample data
+Part 1 established the database structure, entities, relationships and planned API functionality that were implemented during Part 2.
 
-The database is seeded with:
+---
 
-- Two Organisers
-- Two Participants
-- Four User Profiles
-- Three Event Categories
-- Three Events
-- Four Event Enrolments
-- Two Results
+# Part 2 – ASP.NET Core REST API
 
-The complete script was tested in SQL Server Management Studio from a clean RaceDayDB database and executed successfully.
+Part 2 implements the RaceDay backend as an ASP.NET Core REST API.
 
-## Database Design Decisions
+The API was developed using C#, .NET 8, Entity Framework Core and SQL Server.
 
-### Users and Roles
+The backend provides functionality for:
 
-The Users table stores both Organisers and Participants. The Role field identifies the type of user and will support role-based access control in Part 2.
+- User registration.
+- User login and logout.
+- Session management.
+- User profiles.
+- Event management.
+- Event categories.
+- Participant enrolments.
+- Race results.
+- Role-based access control.
+- Input validation.
+- Automated testing.
+- Swagger/OpenAPI documentation.
 
-### User Profiles
+---
 
-UserProfiles stores additional information about a user. UserID is both a foreign key and a unique value which ensures that a user cannot have more than one profile.
+# Technologies Used
 
-### Events and Categories
+The RaceDay project uses the following technologies:
 
-Each Event belongs to one Category while one Category may be associated with several Events.
+- C#
+- ASP.NET Core Web API
+- .NET 8
+- Entity Framework Core
+- Entity Framework Core Code First
+- Microsoft SQL Server
+- SQL Server LocalDB
+- Swagger / OpenAPI
+- xUnit
+- Entity Framework Core InMemory Testing
+- Git
+- GitHub
+- GitHub Actions
+- Visual Studio 2022
 
-Each Event also references the Organiser responsible for managing it through OrganiserID.
+---
 
-### Event Enrolments
+# Project Structure
 
-Enrollments connects Participants to Events.
+Important Part 2 files and folders include:
 
-The combination of EventID and ParticipantID is unique which prevents a Participant from enrolling in the same Event more than once.
+```text
+Controllers/
+DTOs/
+Data/
+Migrations/
+Models/
+Properties/
+docs/
 
-### Results
+AuthControllerTests.cs
+RoleAndEnrollmentTests.cs
+TestSession.cs
+RaceDay.Tests.csproj
 
-Results stores the performance information recorded for completed event enrolments.
-
-EnrollmentID is unique which ensures that each enrolment can have a maximum of one result.
-
-## CI/CD Evidence
-
-**File:** `CI-Success.png`
-
-GitHub Actions is used to validate the RaceDay Part 1 repository structure and required documentation.
-
-The CI/CD screenshot provides evidence of a successful GitHub Actions workflow run.
+Program.cs
+Raceday.API.csproj
+Raceday.API.sln
+Raceday.API.http
+appsettings.json
+appsettings.Development.json
