@@ -1,10 +1,13 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.37614.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Raceday.API", "Raceday.API.csproj", "{4B760EE7-61D3-4141-BD06-9CDEEAF5F04F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Raceday.API", "Raceday.API\Raceday.API.csproj", "{4B760EE7-61D3-4141-BD06-9CDEEAF5F04F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaceDay.Tests", "RaceDay.Tests.csproj", "{C8C04BB5-BAF0-4FE3-B76C-7E78B122BD2C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaceDay.Tests", "RaceDay.Tests\RaceDay.Tests.csproj", "{C8C04BB5-BAF0-4FE3-B76C-7E78B122BD2C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaceDay.Web", "RaceDay.Web\RaceDay.Web.csproj", "{4BEA2967-FD85-42EB-BCB9-D9DFFD39E40F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +23,10 @@ Global
 		{C8C04BB5-BAF0-4FE3-B76C-7E78B122BD2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8C04BB5-BAF0-4FE3-B76C-7E78B122BD2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8C04BB5-BAF0-4FE3-B76C-7E78B122BD2C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BEA2967-FD85-42EB-BCB9-D9DFFD39E40F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BEA2967-FD85-42EB-BCB9-D9DFFD39E40F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BEA2967-FD85-42EB-BCB9-D9DFFD39E40F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BEA2967-FD85-42EB-BCB9-D9DFFD39E40F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -27,4 +34,4 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BD7F484C-76E4-4EAB-A228-A57EDDCDD395}
 	EndGlobalSection
-EndGlobal﻿
+EndGlobal
