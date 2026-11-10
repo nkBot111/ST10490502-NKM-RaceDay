@@ -1,0 +1,26 @@
+@model List<RaceDay.Web.ViewModels.EventViewModel>
+@{ ViewData["Title"] = "Manage Events"; }
+<div class="container py-5">
+  <div class="rounded-4 text-white p-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3" style="background:linear-gradient(135deg,#102b3f,#137c70)">
+    <div><span class="badge bg-warning text-dark">ORGANISER</span><h1 class="fw-bold mt-2">My RaceDay Events</h1><p class="mb-0">Create events, categories, view entries and record results.</p></div>
+    <a asp-action="Create" class="btn btn-warning fw-bold">+ Create Event</a>
+  </div>
+  @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
+  @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger">@TempData["ErrorMessage"]</div> }
+  @if (Model.Count == 0) { <div class="alert alert-info">No events yet. Click Create Event to add your first race.</div> }
+  <div class="row g-4">
+    @foreach (var e in Model) {
+      <div class="col-lg-6"><div class="card shadow-sm rounded-4 border-0 h-100"><div class="card-body p-4">
+        <div class="d-flex justify-content-between"><span class="badge bg-success">@e.Status</span><span class="text-muted">@e.EventDate.ToString("dd MMM yyyy")</span></div>
+        <h3 class="fw-bold mt-3">@e.EventName</h3>
+        <p class="text-muted">@e.Location · @e.DistanceKm km · @e.EventType</p>
+        <div class="d-flex flex-wrap gap-2">
+          <a asp-action="Edit" asp-route-id="@e.EventID" class="btn btn-outline-secondary btn-sm">Edit Event</a>
+          <a asp-action="Categories" asp-route-eventId="@e.EventID" class="btn btn-outline-primary btn-sm">Categories</a>
+          <a asp-action="Enrolments" asp-route-eventId="@e.EventID" class="btn btn-outline-primary btn-sm">Enrolments</a>
+          <a asp-action="Results" asp-route-eventId="@e.EventID" class="btn btn-success btn-sm">Results</a>
+        </div>
+      </div></div></div>
+    }
+  </div>
+</div>

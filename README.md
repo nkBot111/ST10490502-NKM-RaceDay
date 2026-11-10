@@ -135,3 +135,83 @@ Raceday.API.sln
 Raceday.API.http
 appsettings.json
 appsettings.Development.json
+```
+
+---
+
+# Part 3 – MVC Website (NKM)
+
+The ASP.NET Core MVC frontend is in `RaceDay.Web/` and communicates with the separate ASP.NET Core REST API in `Raceday.API/`. Test code is in `RaceDay.Tests/`.
+
+## Website features
+
+- Registration, login and session handling for Participant and Organiser accounts
+- Organiser dashboard, event creation, editing and categories
+- Organiser enrolment list and result recording
+- Participant event search, event details and category-based enrolments
+- Participant enrolment history, cancellation and personal race results
+- Bootstrap responsive layouts
+
+## Running in GitHub Codespaces
+
+Open a Codespace for this repository and use three separate terminals:
+
+**Terminal 1 – one-time setup**
+
+```bash
+bash scripts/setup-codespaces.sh
+```
+
+**Terminal 2 – API (leave running)**
+
+```bash
+bash scripts/run-api.sh
+```
+
+**Terminal 3 – MVC website (leave running)**
+
+```bash
+bash scripts/run-web.sh
+```
+
+Open the forwarded **port 5080** in the Codespaces Ports tab. The API listens on **5081**. Opening the API's `/` route may return HTTP 404 (no homepage); try `/health` or `/swagger` instead.
+
+Once API and MVC both run, open a fourth terminal and run:
+
+```bash
+python3 scripts/smoke-test.py
+```
+
+The smoke test creates temporary Organiser/Participant accounts and checks event creation, category creation, enrolment, race results, login and MVC navigation. It writes demo data to the local development database.
+
+For a basic build and xUnit check:
+
+```bash
+dotnet build Raceday.API.sln
+dotnet test Raceday.API.sln
+```
+
+### Database and Docker
+
+`compose.yaml` starts a **local SQL Server 2022 Developer container** on `127.0.0.1:14333`. The setup script creates a random local SQL Server password in `.env` (ignored by Git). The development API applies the existing EF Core migrations at startup. **Do not commit `.env`**. Your Windows LocalDB database is separate from the Codespaces database.
+
+Optional API and MVC Docker images can be built from the repository root:
+
+```bash
+docker build -t raceday-nkm-api -f Raceday.API/Dockerfile .
+docker build -t raceday-nkm-web -f RaceDay.Web/Dockerfile .
+```
+
+Those images are not a public deployment. For production, use HTTPS, managed session storage and appropriately secured database credentials.
+
+### GitHub Actions
+
+`.github/workflows/part3-ci.yml` restores, builds and tests the three-project .NET 8 solution on pushes to `main` and pull requests. Confirm the actual run is green on your GitHub Actions page.
+
+### Image storage
+
+Azure Blob Storage was **not included in the uploaded nkBot111 code**. If required by the Part 3 rubric, it still needs to be implemented and configured with an Azure account; the presence of Docker and MVC alone does not satisfy an Azure upload requirement.
+
+### Demo video and screenshots
+
+Add the final unlisted demonstration-video URL and screenshots when available. Avoid sharing passwords, tokens or database connection strings in screenshots.

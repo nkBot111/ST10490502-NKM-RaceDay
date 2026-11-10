@@ -1,0 +1,5 @@
+@model RaceDay.Web.ViewModels.EventFormViewModel
+@{ ViewData["Title"] = "Edit Event"; }
+<div class="container py-5"><div class="card shadow-sm border-0 rounded-4"><div class="card-body p-4 p-md-5"><h1 class="fw-bold">Edit Event</h1>
+<form asp-action="Edit" asp-route-id="@ViewBag.EventID" method="post">@Html.AntiForgeryToken()<partial name="_EventForm" model="Model" /></form>
+</div></div></div>

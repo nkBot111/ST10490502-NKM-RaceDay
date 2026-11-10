@@ -1,0 +1,12 @@
+@model List<RaceDay.Web.ViewModels.EventCategoryViewModel>
+@{ ViewData["Title"] = "Event Categories"; }
+<div class="container py-5">
+  <a asp-action="Index" class="btn btn-outline-secondary mb-3">← My Events</a>
+  <div class="d-flex justify-content-between align-items-center gap-2 mb-3"><div><h1 class="fw-bold">Event Categories</h1><p class="text-muted">@ViewBag.EventName</p></div><a asp-action="AddCategory" asp-route-eventId="@ViewBag.EventID" class="btn btn-success">+ Add Category</a></div>
+  @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
+  @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger">@TempData["ErrorMessage"]</div> }
+  @if (Model.Count == 0) { <div class="alert alert-info">No categories yet. Add a distance or age category so participants can enter this race.</div> }
+  <div class="row g-3">@foreach (var c in Model) {
+    <div class="col-md-6"><div class="card border-0 shadow-sm rounded-4"><div class="card-body p-4"><h4>@c.CategoryName</h4><span class="badge bg-info text-dark">@c.CategoryType</span><p class="text-muted mt-2 mb-0">@c.Description</p><small>@(c.DistanceKm.HasValue ? $"{c.DistanceKm} km" : $"Age {c.MinimumAge?.ToString() ?? "Any"}–{c.MaximumAge?.ToString() ?? "Any"}")</small></div></div></div>
+  }</div>
+</div>
