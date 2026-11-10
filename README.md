@@ -215,3 +215,72 @@ Azure Blob Storage was **not included in the uploaded nkBot111 code**. If requir
 ### Demo video and screenshots
 
 Add the final unlisted demonstration-video URL and screenshots when available. Avoid sharing passwords, tokens or database connection strings in screenshots.
+
+
+---
+
+# RaceDay Part 3 – MVC Web Application
+
+## Project Overview
+
+RaceDay Part 3 is an ASP.NET Core MVC web application connected to the existing RaceDay REST API.
+
+The application allows Organisers to manage running events and Participants to register for races, enrol in events and view their results.
+
+## Features
+
+- Participant and Organiser registration and login
+- Role-based dashboards
+- Event creation and management
+- Event categories
+- Participant enrolment
+- Race result recording and viewing
+- Responsive web interface
+- API integration
+
+## Technologies Used
+
+- C# and .NET 8
+- ASP.NET Core MVC
+- ASP.NET Core Web API
+- Entity Framework Core
+- SQL Server
+- Bootstrap
+- GitHub Codespaces
+- GitHub Actions
+- Docker
+
+## Running the Application
+
+Open the repository in GitHub Codespaces.
+
+Run the database setup:
+
+bash scripts/setup-codespaces.sh
+
+Start the API:
+
+bash scripts/run-api.sh
+
+Start the MVC website in a separate terminal:
+
+bash scripts/run-web.sh
+
+Open port 5080 to view the website.
+
+## Testing
+
+Run the automated tests:
+
+dotnet test Raceday.API.sln
+
+## Part 3 Demonstration Video
+
+Watch the completed RaceDay Part 3 demonstration:
+
+[Watch RaceDay Part 3 on YouTube](https://youtu.be/KfKby3NdDko)
+
+## GitHub Repository
+
+https://github.com/nkBot111/ST10490502-NKM-RaceDay
+
