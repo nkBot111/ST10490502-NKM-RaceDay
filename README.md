@@ -278,7 +278,7 @@ dotnet test Raceday.API.sln
 
 Watch the completed RaceDay Part 3 demonstration:
 
-[Watch RaceDay Part 3 on YouTube](https://youtu.be/KfKby3NdDko)
+[Watch RaceDay Part 3 on YouTube](https://youtu.be/O4Rw3qGG3eY?si=SRRYVJtGWvghUUJv)
 
 ## GitHub Repository
 
