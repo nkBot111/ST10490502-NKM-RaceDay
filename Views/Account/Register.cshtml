@@ -1,0 +1,192 @@
+﻿@model RaceDay.Web.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Create Account";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+                <!-- HEADER -->
+                <div class="text-white p-4 p-md-5"
+                     style="background: linear-gradient(135deg, #102b3f, #137c70);">
+
+                    <span class="badge bg-warning text-dark mb-3">
+                        RACEDAY
+                    </span>
+
+                    <h1 class="fw-bold">
+                        Join the RaceDay Community
+                    </h1>
+
+                    <p class="mb-0">
+                        Create your account to participate in
+                        events or manage your own races.
+                    </p>
+                </div>
+
+                <!-- REGISTRATION FORM -->
+                <div class="card-body p-4 p-md-5">
+
+                    <h3 class="fw-bold mb-4">
+                        Create Your Account
+                    </h3>
+
+                    <form asp-controller="Account"
+                          asp-action="Register"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3"></div>
+
+                        <div class="row">
+
+                            <!-- FIRST NAME -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FirstName"
+                                       class="form-label fw-semibold">
+                                </label>
+
+                                <input asp-for="FirstName"
+                                       class="form-control"
+                                       placeholder="First name"
+                                       autocomplete="given-name" />
+
+                                <span asp-validation-for="FirstName"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <!-- LAST NAME -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="LastName"
+                                       class="form-label fw-semibold">
+                                </label>
+
+                                <input asp-for="LastName"
+                                       class="form-control"
+                                       placeholder="Last name"
+                                       autocomplete="family-name" />
+
+                                <span asp-validation-for="LastName"
+                                      class="text-danger small"></span>
+                            </div>
+
+                        </div>
+
+                        <!-- EMAIL -->
+                        <div class="mb-3">
+                            <label asp-for="Email"
+                                   class="form-label fw-semibold">
+                            </label>
+
+                            <input asp-for="Email"
+                                   class="form-control"
+                                   placeholder="Enter your email address"
+                                   autocomplete="email" />
+
+                            <span asp-validation-for="Email"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+
+                            <!-- PASSWORD -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Password"
+                                       class="form-label fw-semibold">
+                                </label>
+
+                                <input asp-for="Password"
+                                       class="form-control"
+                                       placeholder="Create a password"
+                                       autocomplete="new-password" />
+
+                                <span asp-validation-for="Password"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <!-- CONFIRM PASSWORD -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ConfirmPassword"
+                                       class="form-label fw-semibold">
+                                </label>
+
+                                <input asp-for="ConfirmPassword"
+                                       class="form-control"
+                                       placeholder="Confirm your password"
+                                       autocomplete="new-password" />
+
+                                <span asp-validation-for="ConfirmPassword"
+                                      class="text-danger small"></span>
+                            </div>
+
+                        </div>
+
+                        <!-- ACCOUNT TYPE -->
+                        <div class="mb-4">
+
+                            <label asp-for="Role"
+                                   class="form-label fw-semibold">
+                            </label>
+
+                            <select asp-for="Role"
+                                    class="form-select form-select-lg">
+
+                                <option value="">
+                                    -- Select Account Type --
+                                </option>
+
+                                <option value="Participant">
+                                    Participant - Join Events
+                                </option>
+
+                                <option value="Organiser">
+                                    Organiser - Manage Events
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="Role"
+                                  class="text-danger small"></span>
+
+                            <div class="form-text">
+                                Participants can enter events.
+                                Organisers can create and manage events.
+                            </div>
+                        </div>
+
+                        <!-- SUBMIT -->
+                        <button type="submit"
+                                class="btn btn-success btn-lg w-100">
+                            Create Account
+                        </button>
+
+                    </form>
+
+                    <hr class="my-4" />
+
+                    <p class="text-center mb-0">
+                        Already have an account?
+
+                        <a asp-controller="Account"
+                           asp-action="Login"
+                           class="fw-bold text-success">
+                            Sign In
+                        </a>
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

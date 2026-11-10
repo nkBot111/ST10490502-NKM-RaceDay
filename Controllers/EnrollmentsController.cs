@@ -1,327 +1,173 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RaceDay.API.Data;
-using RaceDay.API.DTOs;
-using RaceDay.API.Models;
+﻿
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using RaceDay.Web.Services;
+using RaceDay.Web.ViewModels;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
-namespace RaceDay.API.Controllers
+namespace RaceDay.Web.Controllers
 {
-    [ApiController]
-    public class EnrollmentsController : ControllerBase
+    public class EnrollmentsController : Controller
     {
-        private readonly RaceDayDbContext _context;
+        private readonly RaceDayApiService _api;
 
-        public EnrollmentsController(RaceDayDbContext context)
+        public EnrollmentsController(RaceDayApiService api)
         {
-            _context = context;
+            _api = api;
         }
 
-        // ============================================================
-        // ENROL IN EVENT
-        // POST: /api/events/{eventId}/enrollments
-        // Participant only
-        // ============================================================
-
-        [HttpPost("api/events/{eventId}/enrollments")]
-        public async Task<IActionResult> EnrollInEvent(
-            int eventId,
-            EnrollmentRequest request)
+        // GET: /Enrollments
+        // Display the current Participant's enrolments.
+        [HttpGet]
+        public async Task<IActionResult> Index()
         {
             int? userID = HttpContext.Session.GetInt32("UserID");
             string? role = HttpContext.Session.GetString("Role");
 
             if (userID == null)
             {
-                return Unauthorized(new
-                {
-                    message = "You must be logged in to enrol in an event."
-                });
+                return RedirectToAction("Login", "Account");
             }
 
             if (role != "Participant")
             {
-                return StatusCode(403, new
-                {
-                    message = "Only Participants can enrol in events."
-                });
+                return RedirectToAction("Index", "Home");
             }
 
-            var raceEvent = await _context.Events
-                .FirstOrDefaultAsync(e => e.EventID == eventId);
-
-            if (raceEvent == null)
+            try
             {
-                return NotFound(new
+                using var response = await _api.GetAsync(
+                    "api/enrollments/me");
+
+                if (response.StatusCode ==
+                    HttpStatusCode.Unauthorized)
                 {
-                    message = "Event does not exist."
-                });
+                    HttpContext.Session.Clear();
+
+                    return RedirectToAction("Login", "Account");
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    ViewBag.Error =
+                        "Unable to load your enrolments.";
+
+                    return View(new List<EnrollmentViewModel>());
+                }
+
+                var enrollments = await response.Content
+                    .ReadFromJsonAsync<List<EnrollmentViewModel>>()
+                    ?? new List<EnrollmentViewModel>();
+
+                return View(enrollments
+                    .OrderByDescending(e => e.EnrollmentDate)
+                    .ToList());
+            }
+            catch (HttpRequestException)
+            {
+                ViewBag.Error =
+                    "Cannot connect to the RaceDay API. " +
+                    "Please make sure the API is running.";
+            }
+            catch (TaskCanceledException)
+            {
+                ViewBag.Error =
+                    "The request timed out. Please try again.";
+            }
+            catch (JsonException)
+            {
+                ViewBag.Error =
+                    "The API returned invalid enrolment information.";
             }
 
-            if (raceEvent.Status != "Open")
-            {
-                return BadRequest(new
-                {
-                    message = "This event is not currently open for enrolment."
-                });
-            }
-
-            var category = await _context.Categories
-                .FirstOrDefaultAsync(c =>
-                    c.CategoryID == request.CategoryID &&
-                    c.EventID == eventId);
-
-            if (category == null)
-            {
-                return BadRequest(new
-                {
-                    message = "The selected category does not belong to this event."
-                });
-            }
-
-            bool alreadyEnrolled = await _context.Enrollments
-                .AnyAsync(e =>
-                    e.EventID == eventId &&
-                    e.ParticipantID == userID.Value &&
-                    e.EnrollmentStatus != "Cancelled");
-
-            if (alreadyEnrolled)
-            {
-                return Conflict(new
-                {
-                    message = "You are already enrolled in this event."
-                });
-            }
-
-            int currentParticipants = await _context.Enrollments
-                .CountAsync(e =>
-                    e.EventID == eventId &&
-                    e.EnrollmentStatus != "Cancelled");
-
-            if (currentParticipants >= raceEvent.MaximumParticipants)
-            {
-                return Conflict(new
-                {
-                    message = "This event has reached its maximum participant limit."
-                });
-            }
-
-            var enrollment = new Enrollment
-            {
-                EventID = eventId,
-                ParticipantID = userID.Value,
-                CategoryID = request.CategoryID,
-                EnrollmentDate = DateTime.UtcNow,
-                EnrollmentStatus = "Active"
-            };
-
-            _context.Enrollments.Add(enrollment);
-
-            await _context.SaveChangesAsync();
-
-            return StatusCode(201, new
-            {
-                message = "Enrollment created successfully.",
-                enrollmentID = enrollment.EnrollmentID,
-                eventID = enrollment.EventID,
-                categoryID = enrollment.CategoryID
-            });
+            return View(new List<EnrollmentViewModel>());
         }
 
-
-        // ============================================================
-        // VIEW OWN ENROLLMENTS
-        // GET: /api/enrollments/me
-        // Participant only
-        // ============================================================
-
-        [HttpGet("api/enrollments/me")]
-        public async Task<IActionResult> GetMyEnrollments()
+        // POST: /Enrollments/Cancel/1
+        // Cancel an eligible Participant enrolment.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
         {
             int? userID = HttpContext.Session.GetInt32("UserID");
             string? role = HttpContext.Session.GetString("Role");
 
             if (userID == null)
             {
-                return Unauthorized(new
-                {
-                    message = "You must be logged in to view your enrollments."
-                });
+                return RedirectToAction("Login", "Account");
             }
 
             if (role != "Participant")
             {
-                return StatusCode(403, new
-                {
-                    message = "Only Participants can view personal enrollments."
-                });
+                return RedirectToAction("Index", "Home");
             }
 
-            var enrollments = await _context.Enrollments
-                .Where(e => e.ParticipantID == userID.Value)
-                .Include(e => e.RaceEvent)
-                .Include(e => e.Category)
-                .Select(e => new
-                {
-                    enrollmentID = e.EnrollmentID,
-                    eventID = e.EventID,
-                    eventName = e.RaceEvent.EventName,
-                    eventDate = e.RaceEvent.EventDate,
-                    location = e.RaceEvent.Location,
-                    categoryID = e.CategoryID,
-                    categoryName = e.Category.CategoryName,
-                    enrollmentDate = e.EnrollmentDate,
-                    enrollmentStatus = e.EnrollmentStatus
-                })
-                .OrderByDescending(e => e.enrollmentDate)
-                .ToListAsync();
-
-            return Ok(enrollments);
-        }
-
-
-        // ============================================================
-        // VIEW ENROLLMENTS FOR AN EVENT
-        // GET: /api/events/{eventId}/enrollments
-        // Organiser only and must own the event
-        // ============================================================
-
-        [HttpGet("api/events/{eventId}/enrollments")]
-        public async Task<IActionResult> GetEventEnrollments(int eventId)
-        {
-            int? userID = HttpContext.Session.GetInt32("UserID");
-            string? role = HttpContext.Session.GetString("Role");
-
-            if (userID == null)
+            if (id <= 0)
             {
-                return Unauthorized(new
-                {
-                    message = "You must be logged in to view event enrollments."
-                });
+                TempData["ErrorMessage"] =
+                    "Invalid enrolment selected.";
+
+                return RedirectToAction("Index");
             }
 
-            if (role != "Organiser")
+            try
             {
-                return StatusCode(403, new
+                using var response = await _api.DeleteAsync(
+                    $"api/enrollments/{id}");
+
+                if (response.StatusCode ==
+                    HttpStatusCode.Unauthorized)
                 {
-                    message = "Only Organisers can view event enrollments."
-                });
+                    HttpContext.Session.Clear();
+
+                    return RedirectToAction("Login", "Account");
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Your enrolment has been cancelled successfully.";
+
+                    return RedirectToAction("Index");
+                }
+
+                string errorMessage =
+                    "Your enrolment could not be cancelled.";
+
+                try
+                {
+                    using var document = JsonDocument.Parse(
+                        await response.Content.ReadAsStringAsync());
+
+                    if (document.RootElement.TryGetProperty(
+                        "message", out var message) &&
+                        message.ValueKind == JsonValueKind.String)
+                    {
+                        errorMessage =
+                            message.GetString() ?? errorMessage;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Keep the default error message.
+                }
+
+                TempData["ErrorMessage"] = errorMessage;
+            }
+            catch (HttpRequestException)
+            {
+                TempData["ErrorMessage"] =
+                    "Cannot connect to the RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["ErrorMessage"] =
+                    "The API request timed out.";
             }
 
-            var raceEvent = await _context.Events
-                .FirstOrDefaultAsync(e => e.EventID == eventId);
-
-            if (raceEvent == null)
-            {
-                return NotFound(new
-                {
-                    message = "Event does not exist."
-                });
-            }
-
-            if (raceEvent.OrganiserID != userID.Value)
-            {
-                return StatusCode(403, new
-                {
-                    message = "You may only view enrollments for events that you created."
-                });
-            }
-
-            var enrollments = await _context.Enrollments
-                .Where(e => e.EventID == eventId)
-                .Include(e => e.Participant)
-                .Include(e => e.Category)
-                .Select(e => new
-                {
-                    enrollmentID = e.EnrollmentID,
-                    participantID = e.ParticipantID,
-                    participantName =
-                        e.Participant.FirstName + " " +
-                        e.Participant.LastName,
-                    participantEmail = e.Participant.Email,
-                    categoryID = e.CategoryID,
-                    categoryName = e.Category.CategoryName,
-                    enrollmentDate = e.EnrollmentDate,
-                    enrollmentStatus = e.EnrollmentStatus
-                })
-                .OrderBy(e => e.participantName)
-                .ToListAsync();
-
-            return Ok(enrollments);
-        }
-
-
-        // ============================================================
-        // CANCEL OWN ENROLLMENT
-        // DELETE: /api/enrollments/{id}
-        // Participant only
-        // ============================================================
-
-        [HttpDelete("api/enrollments/{id}")]
-        public async Task<IActionResult> CancelEnrollment(int id)
-        {
-            int? userID = HttpContext.Session.GetInt32("UserID");
-            string? role = HttpContext.Session.GetString("Role");
-
-            if (userID == null)
-            {
-                return Unauthorized(new
-                {
-                    message = "You must be logged in to cancel an enrollment."
-                });
-            }
-
-            if (role != "Participant")
-            {
-                return StatusCode(403, new
-                {
-                    message = "Only Participants can cancel their own enrollments."
-                });
-            }
-
-            var enrollment = await _context.Enrollments
-                .Include(e => e.RaceEvent)
-                .FirstOrDefaultAsync(e => e.EnrollmentID == id);
-
-            if (enrollment == null)
-            {
-                return NotFound(new
-                {
-                    message = "Enrollment does not exist."
-                });
-            }
-
-            if (enrollment.ParticipantID != userID.Value)
-            {
-                return StatusCode(403, new
-                {
-                    message = "You may only cancel your own enrollment."
-                });
-            }
-
-            if (enrollment.EnrollmentStatus == "Cancelled")
-            {
-                return BadRequest(new
-                {
-                    message = "This enrollment has already been cancelled."
-                });
-            }
-
-            if (enrollment.EnrollmentStatus == "Completed")
-            {
-                return BadRequest(new
-                {
-                    message = "A completed enrollment cannot be cancelled."
-                });
-            }
-
-            enrollment.EnrollmentStatus = "Cancelled";
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = "Enrollment cancelled successfully."
-            });
+            return RedirectToAction("Index");
         }
     }
 }

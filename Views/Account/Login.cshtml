@@ -1,0 +1,132 @@
+﻿@model RaceDay.Web.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center align-items-center g-4">
+
+        <!-- LEFT SIDE: WELCOME SECTION -->
+        <div class="col-lg-5">
+            <div class="text-white rounded-4 p-5 h-100"
+                 style="background: linear-gradient(135deg, #102b3f, #137c70);">
+
+                <div class="mb-4">
+                    <span class="badge bg-warning text-dark px-3 py-2">
+                        RACEDAY
+                    </span>
+                </div>
+
+                <h1 class="display-5 fw-bold">
+                    Your Race.
+                    <br />
+                    Your Journey.
+                </h1>
+
+                <p class="lead mt-4">
+                    Welcome to RaceDay, your platform for
+                    discovering and managing running, walking
+                    and cycling events.
+                </p>
+
+                <hr class="border-light my-4" />
+
+                <p>
+                    <strong>Organisers</strong> can manage events,
+                    categories, participants and results.
+                </p>
+
+                <p>
+                    <strong>Participants</strong> can discover
+                    events, register for races and track
+                    their performance.
+                </p>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDE: LOGIN FORM -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <h2 class="fw-bold mb-2">
+                        Welcome Back
+                    </h2>
+
+                    <p class="text-muted mb-4">
+                        Sign in to your RaceDay account.
+                    </p>
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">
+                            @TempData["SuccessMessage"]
+                        </div>
+                    }
+
+                    <form asp-controller="Account"
+                          asp-action="Login"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email"
+                                   class="form-label fw-semibold">
+                            </label>
+
+                            <input asp-for="Email"
+                                   class="form-control form-control-lg"
+                                   placeholder="Enter your email address"
+                                   autocomplete="email" />
+
+                            <span asp-validation-for="Email"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Password"
+                                   class="form-label fw-semibold">
+                            </label>
+
+                            <input asp-for="Password"
+                                   class="form-control form-control-lg"
+                                   placeholder="Enter your password"
+                                   autocomplete="current-password" />
+
+                            <span asp-validation-for="Password"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-success btn-lg w-100">
+                            Sign In
+                        </button>
+
+                    </form>
+
+                    <hr class="my-4" />
+
+                    <p class="text-center mb-0">
+                        Don't have an account?
+
+                        <a asp-controller="Account"
+                           asp-action="Register"
+                           class="fw-bold text-success">
+                            Create an Account
+                        </a>
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

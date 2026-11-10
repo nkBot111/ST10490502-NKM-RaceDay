@@ -1,84 +1,68 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using RaceDay.API.Data;
-using RaceDay.API.Models;
+
+using Microsoft.AspNetCore.Http;
+using RaceDay.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Register MVC controllers and views.
+builder.Services.AddControllersWithViews();
 
-// =============================================================
-// DATABASE
-// =============================================================
+// Allow services and controllers to access the current HTTP context.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<RaceDayApiService>();
 
-builder.Services.AddDbContext<RaceDayDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("RaceDayConnection")
-    ));
+// Configure communication with the existing RaceDay Part 2 API.
+builder.Services.AddHttpClient("RaceDayApi", client =>
+{
+    string baseUrl = builder.Configuration["RaceDayApi:BaseUrl"]
+        ?? throw new InvalidOperationException(
+            "RaceDay API BaseUrl is missing from appsettings.json.");
 
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    // API session cookies will be managed separately for each MVC user.
+    UseCookies = false
+});
 
-// =============================================================
-// CONTROLLERS
-// =============================================================
-
-builder.Services.AddControllers();
-
-
-// =============================================================
-// SESSION AUTHENTICATION
-// =============================================================
-
+// Enable server-side session storage.
 builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
 
+    options.Cookie.Name = ".RaceDay.Web.Session";
     options.Cookie.HttpOnly = true;
-
     options.Cookie.IsEssential = true;
-
     options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
-
-
-// =============================================================
-// PASSWORD HASHING
-// =============================================================
-
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-
-
-// =============================================================
-// SWAGGER / OPENAPI
-// =============================================================
-
-builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen();
-
 
 var app = builder.Build();
 
-
-// =============================================================
-// HTTP PIPELINE
-// =============================================================
-
-if (app.Environment.IsDevelopment())
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-
-    app.UseSwaggerUI();
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
+app.UseRouting();
 
-// Session must be enabled before controller endpoints run.
+// Enable session management before MVC controllers execute.
 app.UseSession();
 
 app.UseAuthorization();
 
-app.MapControllers();
+// Configure the default MVC route.
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

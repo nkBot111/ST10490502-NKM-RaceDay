@@ -1,360 +1,247 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RaceDay.API.Data;
-using RaceDay.API.DTOs;
-using RaceDay.API.Models;
+﻿
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using RaceDay.Web.Services;
+using RaceDay.Web.ViewModels;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
-namespace RaceDay.API.Controllers
+namespace RaceDay.Web.Controllers
 {
-    [ApiController]
-    [Route("api/events")]
-    public class EventsController : ControllerBase
+    public class EventsController : Controller
     {
-        private readonly RaceDayDbContext _context;
+        private readonly RaceDayApiService _api;
 
-        public EventsController(RaceDayDbContext context)
+        public EventsController(RaceDayApiService api)
         {
-            _context = context;
+            _api = api;
         }
 
-        // ============================================================
-        // GET ALL EVENTS
-        // GET: /api/events
-        // Available to any logged-in user
-        // ============================================================
-
+        // GET: /Events
         [HttpGet]
-        public async Task<IActionResult> GetAllEvents()
+        public async Task<IActionResult> Index(
+            string? search, string? type)
         {
-            int? userID = HttpContext.Session.GetInt32("UserID");
+            if (HttpContext.Session.GetInt32("UserID") == null)
+                return RedirectToAction("Login", "Account");
 
-            if (userID == null)
+            if (HttpContext.Session.GetString("Role") != "Participant")
+                return RedirectToAction("Index", "Home");
+
+            ViewBag.Search = search;
+            ViewBag.Type = type ?? "All";
+
+            try
             {
-                return Unauthorized(new
+                using var response = await _api.GetAsync("api/events");
+
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    message = "You must be logged in to view events."
-                });
+                    HttpContext.Session.Clear();
+                    return RedirectToAction("Login", "Account");
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    ViewBag.Error = "Unable to load events.";
+                    return View(new List<EventViewModel>());
+                }
+
+                var events = await response.Content
+                    .ReadFromJsonAsync<List<EventViewModel>>()
+                    ?? new List<EventViewModel>();
+
+                var filtered = events
+                    .Where(e => e.EventDate.Date >= DateTime.Today)
+                    .Where(e => e.Status != "Cancelled" &&
+                                e.Status != "Completed")
+                    .AsEnumerable();
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    filtered = filtered.Where(e =>
+                        e.EventName.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase)
+                        ||
+                        e.Location.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(type) && type != "All")
+                {
+                    filtered = filtered.Where(e =>
+                        e.EventType.Equals(
+                            type,
+                            StringComparison.OrdinalIgnoreCase));
+                }
+
+                return View(filtered
+                    .OrderBy(e => e.EventDate)
+                    .ToList());
+            }
+            catch (HttpRequestException)
+            {
+                ViewBag.Error = "Cannot connect to the RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                ViewBag.Error = "The API request timed out.";
+            }
+            catch (JsonException)
+            {
+                ViewBag.Error = "Invalid event information returned.";
             }
 
-            var events = await _context.Events
-                .Include(e => e.Organiser)
-                .Select(e => new
-                {
-                    eventID = e.EventID,
-                    eventName = e.EventName,
-                    description = e.Description,
-                    eventDate = e.EventDate,
-                    startTime = e.StartTime,
-                    location = e.Location,
-                    distanceKm = e.DistanceKm,
-                    eventType = e.EventType,
-                    maximumParticipants = e.MaximumParticipants,
-                    status = e.Status,
-                    organiserID = e.OrganiserID,
-                    organiserName = e.Organiser.FirstName + " " + e.Organiser.LastName,
-                    createdAt = e.CreatedAt
-                })
-                .OrderBy(e => e.eventDate)
-                .ToListAsync();
-
-            return Ok(events);
+            return View(new List<EventViewModel>());
         }
 
-        // ============================================================
-        // GET EVENT BY ID
-        // GET: /api/events/{id}
-        // Available to any logged-in user
-        // ============================================================
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetEventById(int id)
+        // GET: /Events/Details/1
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
         {
-            int? userID = HttpContext.Session.GetInt32("UserID");
+            if (HttpContext.Session.GetInt32("UserID") == null)
+                return RedirectToAction("Login", "Account");
 
-            if (userID == null)
+            if (HttpContext.Session.GetString("Role") != "Participant")
+                return RedirectToAction("Index", "Home");
+
+            if (id <= 0)
+                return NotFound();
+
+            try
             {
-                return Unauthorized(new
+                using var response = await _api.GetAsync(
+                    $"api/events/{id}");
+
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    message = "You must be logged in to view event details."
-                });
+                    HttpContext.Session.Clear();
+                    return RedirectToAction("Login", "Account");
+                }
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                    return NotFound("Event not found.");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    TempData["ErrorMessage"] =
+                        "Unable to load event details.";
+
+                    return RedirectToAction("Index");
+                }
+
+                var raceEvent = await response.Content
+                    .ReadFromJsonAsync<EventDetailsViewModel>();
+
+                if (raceEvent == null)
+                    return NotFound();
+
+                return View(raceEvent);
+            }
+            catch (HttpRequestException)
+            {
+                TempData["ErrorMessage"] =
+                    "Cannot connect to the RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["ErrorMessage"] =
+                    "The API request timed out.";
+            }
+            catch (JsonException)
+            {
+                TempData["ErrorMessage"] =
+                    "The API returned invalid event details.";
             }
 
-            var raceEvent = await _context.Events
-                .Include(e => e.Organiser)
-                .Include(e => e.Categories)
-                .Where(e => e.EventID == id)
-                .Select(e => new
-                {
-                    eventID = e.EventID,
-                    eventName = e.EventName,
-                    description = e.Description,
-                    eventDate = e.EventDate,
-                    startTime = e.StartTime,
-                    location = e.Location,
-                    distanceKm = e.DistanceKm,
-                    eventType = e.EventType,
-                    maximumParticipants = e.MaximumParticipants,
-                    status = e.Status,
-                    organiserID = e.OrganiserID,
-                    organiserName = e.Organiser.FirstName + " " + e.Organiser.LastName,
-                    createdAt = e.CreatedAt,
-                    categories = e.Categories.Select(c => new
-                    {
-                        categoryID = c.CategoryID,
-                        categoryName = c.CategoryName,
-                        categoryType = c.CategoryType,
-                        minimumAge = c.MinimumAge,
-                        maximumAge = c.MaximumAge,
-                        distanceKm = c.DistanceKm,
-                        description = c.Description
-                    })
-                })
-                .FirstOrDefaultAsync();
-
-            if (raceEvent == null)
-            {
-                return NotFound(new
-                {
-                    message = "Event does not exist."
-                });
-            }
-
-            return Ok(raceEvent);
+            return RedirectToAction("Index");
         }
 
-        // ============================================================
-        // CREATE EVENT
-        // POST: /api/events
-        // Organiser only
-        // ============================================================
-
+        // POST: /Events/Enroll/1
         [HttpPost]
-        public async Task<IActionResult> CreateEvent(EventRequest request)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Enroll(
+            int id, int categoryId)
         {
-            int? userID = HttpContext.Session.GetInt32("UserID");
-            string? role = HttpContext.Session.GetString("Role");
+            if (HttpContext.Session.GetInt32("UserID") == null)
+                return RedirectToAction("Login", "Account");
 
-            if (userID == null)
+            if (HttpContext.Session.GetString("Role") != "Participant")
+                return RedirectToAction("Index", "Home");
+
+            if (id <= 0)
+                return NotFound();
+
+            if (categoryId <= 0)
             {
-                return Unauthorized(new
-                {
-                    message = "You must be logged in to create an event."
-                });
+                TempData["ErrorMessage"] =
+                    "Please select a category.";
+
+                return RedirectToAction("Details", new { id });
             }
 
-            if (role != "Organiser")
+            try
             {
-                return StatusCode(403, new
+                var request = new
                 {
-                    message = "Only Organisers can create events."
-                });
+                    categoryID = categoryId
+                };
+
+                using var response = await _api.PostAsync(
+                    $"api/events/{id}/enrollments",
+                    request);
+
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    HttpContext.Session.Clear();
+                    return RedirectToAction("Login", "Account");
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "You have successfully enrolled in the event!";
+
+                    return RedirectToAction("Details", new { id });
+                }
+
+                string errorMessage =
+                    "Your enrolment could not be completed.";
+
+                try
+                {
+                    using var document = JsonDocument.Parse(
+                        await response.Content.ReadAsStringAsync());
+
+                    if (document.RootElement.TryGetProperty(
+                        "message", out var message))
+                    {
+                        errorMessage =
+                            message.GetString() ?? errorMessage;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Keep the default error message.
+                }
+
+                TempData["ErrorMessage"] = errorMessage;
+            }
+            catch (HttpRequestException)
+            {
+                TempData["ErrorMessage"] =
+                    "Cannot connect to the RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["ErrorMessage"] =
+                    "The API request timed out.";
             }
 
-            string eventType = request.EventType.Trim();
-
-            if (eventType != "Run" &&
-                eventType != "Walk" &&
-                eventType != "Cycle")
-            {
-                return BadRequest(new
-                {
-                    message = "EventType must be Run, Walk or Cycle."
-                });
-            }
-
-            string status = request.Status.Trim();
-
-            if (status != "Open" &&
-                status != "Closed" &&
-                status != "Completed" &&
-                status != "Cancelled")
-            {
-                return BadRequest(new
-                {
-                    message = "Status must be Open, Closed, Completed or Cancelled."
-                });
-            }
-
-            var raceEvent = new RaceEvent
-            {
-                OrganiserID = userID.Value,
-                EventName = request.EventName.Trim(),
-                Description = request.Description?.Trim(),
-                EventDate = request.EventDate,
-                StartTime = request.StartTime,
-                Location = request.Location.Trim(),
-                DistanceKm = request.DistanceKm,
-                EventType = eventType,
-                MaximumParticipants = request.MaximumParticipants,
-                Status = status,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Events.Add(raceEvent);
-
-            await _context.SaveChangesAsync();
-
-            return StatusCode(201, new
-            {
-                message = "Event created successfully.",
-                eventID = raceEvent.EventID
-            });
-        }
-
-        // ============================================================
-        // UPDATE EVENT
-        // PUT: /api/events/{id}
-        // Organiser only and must own event
-        // ============================================================
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEvent(
-            int id,
-            EventRequest request)
-        {
-            int? userID = HttpContext.Session.GetInt32("UserID");
-            string? role = HttpContext.Session.GetString("Role");
-
-            if (userID == null)
-            {
-                return Unauthorized(new
-                {
-                    message = "You must be logged in to update an event."
-                });
-            }
-
-            if (role != "Organiser")
-            {
-                return StatusCode(403, new
-                {
-                    message = "Only Organisers can update events."
-                });
-            }
-
-            var raceEvent = await _context.Events
-                .FirstOrDefaultAsync(e => e.EventID == id);
-
-            if (raceEvent == null)
-            {
-                return NotFound(new
-                {
-                    message = "Event does not exist."
-                });
-            }
-
-            if (raceEvent.OrganiserID != userID.Value)
-            {
-                return StatusCode(403, new
-                {
-                    message = "You may only update events that you created."
-                });
-            }
-
-            string eventType = request.EventType.Trim();
-
-            if (eventType != "Run" &&
-                eventType != "Walk" &&
-                eventType != "Cycle")
-            {
-                return BadRequest(new
-                {
-                    message = "EventType must be Run, Walk or Cycle."
-                });
-            }
-
-            string status = request.Status.Trim();
-
-            if (status != "Open" &&
-                status != "Closed" &&
-                status != "Completed" &&
-                status != "Cancelled")
-            {
-                return BadRequest(new
-                {
-                    message = "Status must be Open, Closed, Completed or Cancelled."
-                });
-            }
-
-            raceEvent.EventName = request.EventName.Trim();
-            raceEvent.Description = request.Description?.Trim();
-            raceEvent.EventDate = request.EventDate;
-            raceEvent.StartTime = request.StartTime;
-            raceEvent.Location = request.Location.Trim();
-            raceEvent.DistanceKm = request.DistanceKm;
-            raceEvent.EventType = eventType;
-            raceEvent.MaximumParticipants = request.MaximumParticipants;
-            raceEvent.Status = status;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = "Event updated successfully."
-            });
-        }
-
-        // ============================================================
-        // DELETE EVENT
-        // DELETE: /api/events/{id}
-        // Organiser only and must own event
-        // ============================================================
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEvent(int id)
-        {
-            int? userID = HttpContext.Session.GetInt32("UserID");
-            string? role = HttpContext.Session.GetString("Role");
-
-            if (userID == null)
-            {
-                return Unauthorized(new
-                {
-                    message = "You must be logged in to delete an event."
-                });
-            }
-
-            if (role != "Organiser")
-            {
-                return StatusCode(403, new
-                {
-                    message = "Only Organisers can delete events."
-                });
-            }
-
-            var raceEvent = await _context.Events
-                .Include(e => e.Enrollments)
-                .Include(e => e.Categories)
-                .FirstOrDefaultAsync(e => e.EventID == id);
-
-            if (raceEvent == null)
-            {
-                return NotFound(new
-                {
-                    message = "Event does not exist."
-                });
-            }
-
-            if (raceEvent.OrganiserID != userID.Value)
-            {
-                return StatusCode(403, new
-                {
-                    message = "You may only delete events that you created."
-                });
-            }
-
-            if (raceEvent.Enrollments.Any())
-            {
-                return Conflict(new
-                {
-                    message = "This event cannot be deleted because participants are already enrolled."
-                });
-            }
-
-            _context.Events.Remove(raceEvent);
-
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return RedirectToAction("Details", new { id });
         }
     }
 }

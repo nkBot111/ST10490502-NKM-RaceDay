@@ -1,0 +1,210 @@
+﻿@model List<RaceDay.Web.ViewModels.EventViewModel>
+
+@{
+    ViewData["Title"] = "Explore Events";
+
+    string search = ViewBag.Search ?? "";
+    string type = ViewBag.Type ?? "All";
+}
+
+<div class="container py-5">
+
+    <div class="p-4 p-md-5 rounded-4 text-white mb-4"
+         style="background: linear-gradient(135deg, #102b3f, #137c70);">
+
+        <span class="badge bg-warning text-dark mb-3">
+            EXPLORE RACEDAY
+        </span>
+
+        <h1 class="display-5 fw-bold">
+            Find Your Next Race
+        </h1>
+
+        <p class="lead mb-0">
+            Discover upcoming running, walking and cycling
+            events. Find a challenge that suits your goals.
+        </p>
+    </div>
+
+    <!-- SEARCH AND FILTERS -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+
+            <form asp-controller="Events"
+                  asp-action="Index"
+                  method="get">
+
+                <div class="row g-3 align-items-end">
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Search Events
+                        </label>
+
+                        <input type="text"
+                               name="search"
+                               value="@search"
+                               class="form-control"
+                               placeholder="Search by name or location" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            Event Type
+                        </label>
+
+                        <select name="type" class="form-select">
+                            <option value="All" selected="@(type == "All")">
+                                All Events
+                            </option>
+                            <option value="Run" selected="@(type == "Run")">
+                                Running
+                            </option>
+                            <option value="Walk" selected="@(type == "Walk")">
+                                Walking
+                            </option>
+                            <option value="Cycle" selected="@(type == "Cycle")">
+                                Cycling
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit"
+                                class="btn btn-success w-100">
+                            Search
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.Error
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- EVENT LIST -->
+    @if (Model.Count == 0)
+    {
+        <div class="text-center bg-white shadow-sm rounded-4 p-5">
+            <h3 class="fw-bold">No Upcoming Events Found</h3>
+
+            <p class="text-muted">
+                There are currently no events matching your filters.
+                Try a different search or check back later.
+            </p>
+
+            <a asp-controller="Events"
+               asp-action="Index"
+               class="btn btn-outline-success">
+                Clear Filters
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold mb-0">Upcoming Events</h3>
+
+            <span class="badge bg-success">
+                @Model.Count Events
+            </span>
+        </div>
+
+        <div class="row g-4">
+
+            @foreach (var raceEvent in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+
+                        <div class="p-4 text-white"
+                             style="background: linear-gradient(135deg, #102b3f, #137c70);">
+
+                            <span class="badge bg-warning text-dark mb-3">
+                                @raceEvent.EventType
+                            </span>
+
+                            <h4 class="fw-bold mb-2">
+                                @raceEvent.EventName
+                            </h4>
+
+                            <span class="small">
+                                @raceEvent.Location
+                            </span>
+                        </div>
+
+                        <div class="card-body p-4 d-flex flex-column">
+
+                            <div class="mb-3">
+                                <strong>Date:</strong>
+                                @raceEvent.EventDate.ToString("dd MMMM yyyy")
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Start Time:</strong>
+                                @raceEvent.StartTime.ToString(@"hh\:mm")
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Distance:</strong>
+                                @raceEvent.DistanceKm km
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Location:</strong>
+                                @raceEvent.Location
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Status:</strong>
+
+                                @if (raceEvent.Status == "Open")
+                                {
+                                    <span class="badge bg-success">
+                                        Open
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        @raceEvent.Status
+                                    </span>
+                                }
+                            </div>
+
+                            <p class="text-muted">
+                                @raceEvent.Description
+                            </p>
+
+                            <!-- VIEW EVENT AND ENTER RACE -->
+                            <div class="mt-auto">
+                                <a asp-controller="Events"
+                                   asp-action="Details"
+                                   asp-route-id="@raceEvent.EventID"
+                                   class="btn btn-success w-100 mt-3">
+                                    View Event &amp; Enter Race
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    }
+
+</div>

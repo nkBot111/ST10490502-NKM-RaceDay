@@ -1,0 +1,221 @@
+﻿@model List<RaceDay.Web.ViewModels.EnrollmentViewModel>
+
+@{
+    ViewData["Title"] = "My Enrolments";
+}
+
+<div class="container py-5">
+
+    <!-- PAGE HEADER -->
+    <div class="p-4 p-md-5 rounded-4 text-white mb-4"
+         style="background: linear-gradient(135deg, #102b3f, #137c70);">
+
+        <span class="badge bg-warning text-dark mb-3">
+            MY RACEDAY JOURNEY
+        </span>
+
+        <h1 class="display-5 fw-bold">
+            My Enrolments
+        </h1>
+
+        <p class="lead mb-0">
+            Track your upcoming races, selected categories
+            and enrolment statuses.
+        </p>
+    </div>
+
+    <!-- SUCCESS MESSAGE -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success rounded-3">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <!-- ERROR MESSAGE -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger rounded-3">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger rounded-3">
+            @ViewBag.Error
+        </div>
+    }
+
+    <!-- HEADING AND EXPLORE BUTTON -->
+    <div class="d-flex justify-content-between
+                align-items-center flex-wrap gap-3 mb-4">
+
+        <h3 class="fw-bold mb-0">
+            Your Registered Events
+        </h3>
+
+        <a asp-controller="Events"
+           asp-action="Index"
+           class="btn btn-success">
+            Explore More Events
+        </a>
+
+    </div>
+
+    <!-- NO ENROLMENTS -->
+    @if (Model.Count == 0)
+    {
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center p-5">
+
+                <div class="fs-1 mb-3">🏃</div>
+
+                <h3 class="fw-bold">
+                    No Enrolments Yet
+                </h3>
+
+                <p class="text-muted">
+                    You have not entered any RaceDay events yet.
+                    Explore upcoming races and start your journey.
+                </p>
+
+                <a asp-controller="Events"
+                   asp-action="Index"
+                   class="btn btn-success btn-lg">
+                    Find Your First Race
+                </a>
+
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+
+            @foreach (var enrollment in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+
+                    <div class="card h-100 border-0 shadow-sm rounded-4
+                                        overflow-hidden">
+
+                        <!-- EVENT HEADER -->
+                        <div class="p-4 text-white"
+                             style="background: linear-gradient(135deg, #102b3f, #137c70);">
+
+                            <span class="badge bg-warning text-dark mb-3">
+                                RACEDAY EVENT
+                            </span>
+
+                            <h4 class="fw-bold mb-2">
+                                @enrollment.EventName
+                            </h4>
+
+                            <p class="mb-0">
+                                @enrollment.Location
+                            </p>
+
+                        </div>
+
+                        <!-- ENROLMENT DETAILS -->
+                        <div class="card-body p-4 d-flex flex-column">
+
+                            <div class="mb-3">
+                                <strong>Event Date:</strong>
+
+                                <div>
+                                    @enrollment.EventDate.ToString(
+                                    "dd MMMM yyyy")
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Category:</strong>
+
+                        <div>
+                            @enrollment.CategoryName
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Enrolled On:</strong>
+
+                        <div>
+                            @enrollment.EnrollmentDate.ToString(
+                                                        "dd MMMM yyyy")
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <strong>Enrolment Status:</strong>
+
+                        <div class="mt-2">
+
+                            @if (enrollment.EnrollmentStatus == "Active")
+                                    {
+                                        <span class="badge bg-success px-3 py-2">
+                                            Active
+                                        </span>
+                                    }
+                                    else if (enrollment.EnrollmentStatus == "Completed")
+                                    {
+                                        <span class="badge bg-primary px-3 py-2">
+                                            Completed
+                                        </span>
+                                    }
+                                    else if (enrollment.EnrollmentStatus == "Cancelled")
+                                    {
+                                        <span class="badge bg-danger px-3 py-2">
+                                            Cancelled
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary px-3 py-2">
+                                            @enrollment.EnrollmentStatus
+                                        </span>
+                                    }
+
+                                </div>
+                            </div>
+
+                            <!-- ACTION BUTTONS -->
+                            <div class="mt-auto">
+
+                                <a asp-controller="Events"
+                                   asp-action="Details"
+                                   asp-route-id="@enrollment.EventID"
+                                   class="btn btn-outline-success w-100 mb-2">
+                                    View Event Details
+                                </a>
+
+                                @if (enrollment.EnrollmentStatus == "Active")
+                                {
+                                    <form asp-controller="Enrollments"
+                                          asp-action="Cancel"
+                                          asp-route-id="@enrollment.EnrollmentID"
+                                          method="post"
+                                          onsubmit="return confirm('Are you sure you want to cancel this enrolment?');">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit"
+                                                class="btn btn-outline-danger w-100">
+                                            Cancel Enrolment
+                                        </button>
+
+                                    </form>
+                                }
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    }
+
+</div>
